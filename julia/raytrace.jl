@@ -29,21 +29,23 @@ end
 
 # Hittable Class and associated methods
 
-struct Hit_Record
+mutable struct Hit_Record
     point::Point3
     normal::Vec3
-    t::Float64
+    t::Float32
     front_face::Bool
 end
 
 # makes sure surface normals always point outwards
 function set_face_normal(hr::Hit_Record, ray::Ray, outward_normal::Vec3)
-    front_face = dot(r.direction, outward_normal) < 0
+    front_face = dot(ray.direction, outward_normal) < 0
     hr.normal = front_face ? outward_normal : -outward_normal
 end
 
+abstract type Hittable end
+
 # generic hit interface
-function hit(obj::Hittable, ray::Ray, t_min::Float, t_max::Float, rec::Hit_Record)
+function hit(obj::Hittable, ray::Ray, t_min::Float32, t_max::Float32, rec::Hit_Record)
     throw("unimplemented")
 end
 
@@ -54,11 +56,11 @@ struct Sphere <: Hittable
     radius::Float64
 end
 
-function hit(sphere::Sphere, ray::Ray, t_min::Float, t_max::Float, rec::Hit_Record)
-    oc = r.origin .- center
-    a = norm(r.direction)^2
-    half_b = dot(oc, r.direction)
-    c = norm(oc)^2 - radius .* radius
+function hit(sphere::Sphere, ray::Ray, t_min::Float32, t_max::Float32, rec::Hit_Record)::Bool
+    oc = ray.origin .- sphere.center
+    a = norm(ray.direction)^2
+    half_b = dot(oc, ray.direction)
+    c = norm(oc)^2 - sphere.radius .* sphere.radius
     
     discriminant = half_b .* half_b - a .* c
     if discriminant < 0 return false end
@@ -75,12 +77,14 @@ function hit(sphere::Sphere, ray::Ray, t_min::Float, t_max::Float, rec::Hit_Reco
 
     rec.t = root
     rec.point = at(ray, rec.t)
-    rec.normal = (rec.point .- center) ./ radius
 
+    outward_normal = (rec.point .- sphere.center) ./ sphere.radius
+    rec.normal = set_face_normal(rec, ray, outward_normal)
+    
     return true
 end
 
-function hit_sphere(center, radius, r)
+function hit_sphere(center, radius, r)::Float32
     oc = r.origin .- center
     a = norm(r.direction)^2
     half_b = dot(oc, r.direction)
@@ -95,13 +99,42 @@ function hit_sphere(center, radius, r)
 
 end
 
-function ray_color(ray)
+# Hittable List Class
 
-    t = hit_sphere(point3(0,0,-1), 0.5, ray)
-    if t > 0
-        N = normalize(at(ray, t) - vec3(0,0,-1))
-        return 0.5 .* color(x(N)+1, y(N)+1, z(N)+1)
+struct Hittable_List <: Hittable
+    objects::Vector{Hittable}
+end
+
+function hit(objects::Hittable_List, ray::Ray, t_min::Float32, t_max::Float32, rec::Hit_Record)::Bool
+
+    temp_rec = Hit_Record(point3(0,0,0), vec3(0,0,0), 0., false)
+    hit_anything = false
+    closest_so_far = t_max
+
+
+    for object in objects.objects
+        if hit(object, ray, t_min, closest_so_far, temp_rec)
+            hit_anything = true
+            closest_so_far = temp_rec.t
+            rec = temp_rec
+        end
     end
+
+    return hit_anything
+end
+
+function ray_color(ray::Ray, world::Hittable)
+
+    rec = Hit_Record(point3(0,0,0), vec3(0,0,0), 0., false)
+    if hit(world, ray, Float32(0), Inf32, rec)
+        return 0.5 * (rec.normal + color(1,1,1))
+    end
+
+    # t = hit_sphere(point3(0,0,-1), 0.5, ray)
+    # if t > 0
+    #     N = normalize(at(ray, t) - vec3(0,0,-1))
+    #     return 0.5 .* color(x(N)+1, y(N)+1, z(N)+1)
+    # end
     unit_direction = normalize(ray.direction)
     t = 0.5 * (y(unit_direction) + 1.0)
     return (1.0-t) * color(1.0, 1.0, 1.0) + t * color(0.5, 0.7, 1.0);
@@ -127,6 +160,13 @@ function main()
     image_width = 400
     image_height = floor(Int, Float32(image_width) / aspect_ratio)
 
+    # World
+    
+    world::Hittable_List = Hittable_List([
+        Sphere(point3(0,0,-1), 0.5),
+        Sphere(point3(0,-100.5,-1), 100)
+    ])
+
     # Camera
     
     viewport_height = 2.0
@@ -148,7 +188,7 @@ function main()
             u = Float32(i) / (image_width-1)
             v = Float32(j) / (image_height-1)
             r = Ray(origin, lower_left_corner + u*horizontal + v*vertical - origin)
-            pixel_color = ray_color(r)
+            pixel_color = ray_color(r, world)
             write_color(pixel_color)
         
         end
