@@ -1,3 +1,4 @@
+using Printf
 using LinearAlgebra
 
 
@@ -26,26 +27,38 @@ function at(ray::Ray, t)
     return ray.origin .+ t * ray.direction
 end
 
+# makes sure surface normals always point outwards
+function set_face_normal(ray::Ray, outward_normal::Vec3)::Vec3
+    front_face = dot(ray.direction, outward_normal) < 0
+    return front_face ? outward_normal : -outward_normal
+end
 
 # Hittable Class and associated methods
 
-mutable struct Hit_Record
+struct Hit_Record
     point::Point3
     normal::Vec3
     t::Float32
-    front_face::Bool
 end
 
-# makes sure surface normals always point outwards
-function set_face_normal(hr::Hit_Record, ray::Ray, outward_normal::Vec3)
-    front_face = dot(ray.direction, outward_normal) < 0
-    hr.normal = front_face ? outward_normal : -outward_normal
+# Option type for Hit_Record
+mutable struct Hit
+    val::Union{Hit_Record, Nothing}
 end
+
+# constructors
+Hit() = Hit(nothing)
+Hit(p::Point3, n::Vec3, t::Float32) = Hit(Hit_Record(p,n,t))
+
+# # Define methods for the Option type
+# Base.getindex(o::Hit) = o.val
+# Base.isnothing(o::Hit) = isnothing(o.value)
+# Base.isdefined(o::Hit) = !isnothing(o.value)
 
 abstract type Hittable end
 
 # generic hit interface
-function hit(obj::Hittable, ray::Ray, t_min::Float32, t_max::Float32, rec::Hit_Record)
+function hit(obj::Hittable, ray::Ray, t_min::Float32, t_max::Float32, rec::Hit_Record)::Hit
     throw("unimplemented")
 end
 
@@ -56,14 +69,14 @@ struct Sphere <: Hittable
     radius::Float64
 end
 
-function hit(sphere::Sphere, ray::Ray, t_min::Float32, t_max::Float32, rec::Hit_Record)::Bool
+function hit(sphere::Sphere, ray::Ray, t_min::Float32, t_max::Float32)::Hit
     oc = ray.origin .- sphere.center
     a = norm(ray.direction)^2
     half_b = dot(oc, ray.direction)
-    c = norm(oc)^2 - sphere.radius .* sphere.radius
+    c = norm(oc)^2 - sphere.radius * sphere.radius
     
-    discriminant = half_b .* half_b - a .* c
-    if discriminant < 0 return false end
+    discriminant = half_b * half_b - a * c
+    if discriminant < 0 return Hit() end
     sqrtd = sqrt(discriminant)
 
     # Find the nearest root that lies in the acceptable range.
@@ -71,33 +84,39 @@ function hit(sphere::Sphere, ray::Ray, t_min::Float32, t_max::Float32, rec::Hit_
     if (root < t_min || t_max < root)
         root = (-half_b + sqrtd) / a
         if (root < t_min || t_max < root) 
-            return false
+            return Hit()
         end
     end
 
-    rec.t = root
-    rec.point = at(ray, rec.t)
-
-    outward_normal = (rec.point .- sphere.center) ./ sphere.radius
-    rec.normal = set_face_normal(rec, ray, outward_normal)
+    point = at(ray, root)
+    outward_normal = (point .- sphere.center) ./ sphere.radius
+    normal = set_face_normal(ray, outward_normal)
+    rec = Hit(point, normal, Float32(root))
+    return rec
     
-    return true
+    # rec.t = root
+    # rec.point = at(ray, rec.t)
+
+    # outward_normal = (rec.point .- sphere.center) ./ sphere.radius
+    # rec.normal = set_face_normal(ray, outward_normal)
+    
+    # return true
 end
 
-function hit_sphere(center, radius, r)::Float32
-    oc = r.origin .- center
-    a = norm(r.direction)^2
-    half_b = dot(oc, r.direction)
-    c = norm(oc)^2 - radius .* radius
-    discriminant = half_b .* half_b - a .* c
+# function hit_sphere(center, radius, r)::Float32
+#     oc = r.origin .- center
+#     a = norm(r.direction)^2
+#     half_b = dot(oc, r.direction)
+#     c = norm(oc)^2 - radius .* radius
+#     discriminant = half_b .* half_b - a .* c
 
-    if discriminant < 0
-        return -1.0
-    else
-        return (-half_b .- sqrt(discriminant) ) ./ a
-    end
+#     if discriminant < 0
+#         return -1.0
+#     else
+#         return (-half_b .- sqrt(discriminant) ) ./ a
+#     end
 
-end
+# end
 
 # Hittable List Class
 
@@ -105,29 +124,29 @@ struct Hittable_List <: Hittable
     objects::Vector{Hittable}
 end
 
-function hit(objects::Hittable_List, ray::Ray, t_min::Float32, t_max::Float32, rec::Hit_Record)::Bool
+function hit(world::Hittable_List, ray::Ray, t_min::Float32, t_max::Float32)::Hit
 
-    temp_rec = Hit_Record(point3(0,0,0), vec3(0,0,0), 0., false)
-    hit_anything = false
+    rec = Hit()
     closest_so_far = t_max
 
-
-    for object in objects.objects
-        if hit(object, ray, t_min, closest_so_far, temp_rec)
-            hit_anything = true
-            closest_so_far = temp_rec.t
-            rec = temp_rec
+    for object in world.objects
+        tmp = hit(object, ray, t_min, closest_so_far)
+        if tmp.val != nothing
+            # rec = Hit(tmp.point, tmp.normal, tmp.t)
+            rec = tmp
+            closest_so_far = rec.val.t
         end
     end
 
-    return hit_anything
+    return rec
 end
 
 function ray_color(ray::Ray, world::Hittable)
 
-    rec = Hit_Record(point3(0,0,0), vec3(0,0,0), 0., false)
-    if hit(world, ray, Float32(0), Inf32, rec)
-        return 0.5 * (rec.normal + color(1,1,1))
+    rec = hit(world, ray, Float32(0), Inf32)
+    if rec.val != nothing
+        # print(rec.normal)
+        return 0.5 .* (rec.val.normal .+ color(1,1,1))
     end
 
     # t = hit_sphere(point3(0,0,-1), 0.5, ray)
@@ -147,8 +166,8 @@ function write_color(pixel_color::Color, max=256)
     ir = floor(Int, max * x(pixel_color))
     ig = floor(Int, max * y(pixel_color))
     ib = floor(Int, max * z(pixel_color))
-    
-    println(ir, " ", ig, " ", ib)
+
+    @printf "%d %d %d\n" ir ig ib
 end
 
 
@@ -176,19 +195,19 @@ function main()
     origin = point3(0, 0, 0)
     horizontal = vec3(viewport_width, 0, 0)
     vertical = vec3(0, viewport_height, 0)
-    lower_left_corner = origin .- horizontal./2 .- vertical./2 .- vec3(0, 0, focal_length)
+    lower_left_corner = origin - horizontal/2 - vertical/2 - vec3(0, 0, focal_length)
 
     # Render
-
-    println("P3\n", image_width, " ", image_height, "\n255")
+    
+    @printf "P3\n%d %d\n255\n" image_width image_height
 
     for j in reverse(0:(image_height-1))
         for i in 0:(image_width-1)
 
             u = Float32(i) / (image_width-1)
             v = Float32(j) / (image_height-1)
-            r = Ray(origin, lower_left_corner + u*horizontal + v*vertical - origin)
-            pixel_color = ray_color(r, world)
+            ray = Ray(origin, lower_left_corner + u*horizontal + v*vertical - origin)
+            pixel_color = ray_color(ray, world)
             write_color(pixel_color)
         
         end
