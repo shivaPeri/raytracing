@@ -1,4 +1,6 @@
 using Printf
+using Random
+using Parameters
 using LinearAlgebra
 
 
@@ -160,14 +162,39 @@ function ray_color(ray::Ray, world::Hittable)
 end
 
 # Write the translated [0,255] value of each color component.
-function write_color(pixel_color::Color, max=256)
+function write_color(pixel_color::Color, samples::Int)
 
-    max = max - 0.001
-    ir = floor(Int, max * x(pixel_color))
-    ig = floor(Int, max * y(pixel_color))
-    ib = floor(Int, max * z(pixel_color))
+    r, g, b = x(pixel_color), y(pixel_color), z(pixel_color)
+
+    scale = 1.0 / Float32(samples)
+    r *= scale
+    g *= scale
+    b *= scale
+
+    max = 256
+    ir = floor(Int, max * clamp(r, 0, 0.999))
+    ig = floor(Int, max * clamp(g, 0, 0.999))
+    ib = floor(Int, max * clamp(b, 0, 0.999))
 
     @printf "%d %d %d\n" ir ig ib
+end
+
+
+# Camera Class and associated methods
+@with_kw struct Camera
+    aspect_ratio::Float32 = 16.0 / 9.0
+    viewport_height::Float32 = 2.0
+    viewport_width::Float32 = aspect_ratio * viewport_height
+    focal_length::Float32 = 1.0
+
+    origin = point3(0, 0, 0)
+    horizontal = vec3(viewport_width, 0, 0)
+    vertical = vec3(0, viewport_height, 0)
+    lower_left_corner = origin - horizontal/2 - vertical/2 - vec3(0, 0, focal_length)
+end
+
+function get_ray(camera::Camera, u::Float32, v::Float32)
+    return Ray(camera.origin, camera.lower_left_corner + u * camera.horizontal +  v * camera.vertical - camera.origin)
 end
 
 
@@ -178,6 +205,7 @@ function main()
     aspect_ratio = 16.0 / 9.0
     image_width = 400
     image_height = floor(Int, Float32(image_width) / aspect_ratio)
+    samples_per_pixel = 100
 
     # World
     
@@ -188,15 +216,8 @@ function main()
 
     # Camera
     
-    viewport_height = 2.0
-    viewport_width = aspect_ratio * viewport_height
-    focal_length = 1.0
-
-    origin = point3(0, 0, 0)
-    horizontal = vec3(viewport_width, 0, 0)
-    vertical = vec3(0, viewport_height, 0)
-    lower_left_corner = origin - horizontal/2 - vertical/2 - vec3(0, 0, focal_length)
-
+    camera::Camera = Camera()
+    
     # Render
     
     @printf "P3\n%d %d\n255\n" image_width image_height
@@ -204,15 +225,19 @@ function main()
     for j in reverse(0:(image_height-1))
         for i in 0:(image_width-1)
 
-            u = Float32(i) / (image_width-1)
-            v = Float32(j) / (image_height-1)
-            ray = Ray(origin, lower_left_corner + u*horizontal + v*vertical - origin)
-            pixel_color = ray_color(ray, world)
-            write_color(pixel_color)
-        
+            pixel_color = color(0,0,0)
+
+            for s in 1:samples_per_pixel
+                
+                u = (Float32(i) + rand(Float32)) / (image_width-1)
+                v = (Float32(j) + rand(Float32)) / (image_height-1)
+
+                ray = get_ray(camera, u, v)
+                pixel_color .+= ray_color(ray, world)
+            end
+            write_color(pixel_color, samples_per_pixel)
         end
     end
-
 end
 
 main()
