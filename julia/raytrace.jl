@@ -15,6 +15,8 @@ x = v -> v[1]
 y = v -> v[2]
 z = v -> v[3]
 
+# Ray Class and associated methods
+
 struct Ray
     origin::Point3
     direction::Vec3
@@ -25,17 +27,70 @@ function at(ray::Ray, t)
 end
 
 
+# Hittable Class and associated methods
+
+struct Hit_Record
+    point::Point3
+    normal::Vec3
+    t::Float64
+    front_face::Bool
+end
+
+# makes sure surface normals always point outwards
+function set_face_normal(hr::Hit_Record, ray::Ray, outward_normal::Vec3)
+    front_face = dot(r.direction, outward_normal) < 0
+    hr.normal = front_face ? outward_normal : -outward_normal
+end
+
+# generic hit interface
+function hit(obj::Hittable, ray::Ray, t_min::Float, t_max::Float, rec::Hit_Record)
+    throw("unimplemented")
+end
+
+# Sphere Class and associated methods
+
+struct Sphere <: Hittable
+    center::Point3
+    radius::Float64
+end
+
+function hit(sphere::Sphere, ray::Ray, t_min::Float, t_max::Float, rec::Hit_Record)
+    oc = r.origin .- center
+    a = norm(r.direction)^2
+    half_b = dot(oc, r.direction)
+    c = norm(oc)^2 - radius .* radius
+    
+    discriminant = half_b .* half_b - a .* c
+    if discriminant < 0 return false end
+    sqrtd = sqrt(discriminant)
+
+    # Find the nearest root that lies in the acceptable range.
+    root = (-half_b - sqrtd) / a
+    if (root < t_min || t_max < root)
+        root = (-half_b + sqrtd) / a
+        if (root < t_min || t_max < root) 
+            return false
+        end
+    end
+
+    rec.t = root
+    rec.point = at(ray, rec.t)
+    rec.normal = (rec.point .- center) ./ radius
+
+    return true
+end
+
 function hit_sphere(center, radius, r)
     oc = r.origin .- center
-    a = dot(r.direction, r.direction)
-    b = 2.0 * dot(oc, r.direction)
-    c = dot(oc, oc) .- radius .* radius
-    discriminant = b .* b .- 4 .* a .* c
+    a = norm(r.direction)^2
+    half_b = dot(oc, r.direction)
+    c = norm(oc)^2 - radius .* radius
+    discriminant = half_b .* half_b - a .* c
 
     if discriminant < 0
         return -1.0
     else
-        return (-b - sqrt(discriminant) ) / (2.0 .* a)
+        return (-half_b .- sqrt(discriminant) ) ./ a
     end
 
 end
