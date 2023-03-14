@@ -1,6 +1,7 @@
 using Printf
 using Random
 using Parameters
+using ProgressBars
 using LinearAlgebra
 
 
@@ -69,6 +70,28 @@ end
 struct Sphere <: Hittable
     center::Point3
     radius::Float64
+end
+
+function random_in_unit_sphere()::Vec3
+    while true
+        p = rand(Float32, 3)
+        if norm(p) >= 1 continue end
+        return p
+    end
+end
+
+function random_unit_vector()::Vec3
+    p = random_in_unit_sphere()
+    return p / norm(p)
+end
+
+function random_in_unit_hemisphere(normal::Vec3)::Vec3
+    p = random_in_unit_sphere()
+    if (dot(p, normal) > 0.0) # In the same hemisphere as the normal
+        return p
+    else
+        return -p
+    end
 end
 
 function hit(sphere::Sphere, ray::Ray, t_min::Float32, t_max::Float32)::Hit
@@ -143,19 +166,19 @@ function hit(world::Hittable_List, ray::Ray, t_min::Float32, t_max::Float32)::Hi
     return rec
 end
 
-function ray_color(ray::Ray, world::Hittable)
+function ray_color(ray::Ray, world::Hittable, depth::Int)
 
-    rec = hit(world, ray, Float32(0), Inf32)
-    if rec.val != nothing
-        # print(rec.normal)
-        return 0.5 .* (rec.val.normal .+ color(1,1,1))
+    # If we've exceeded the ray bounce limit, no more light is gathered.
+    if depth <= 0
+        return color(0,0,0)
     end
 
-    # t = hit_sphere(point3(0,0,-1), 0.5, ray)
-    # if t > 0
-    #     N = normalize(at(ray, t) - vec3(0,0,-1))
-    #     return 0.5 .* color(x(N)+1, y(N)+1, z(N)+1)
-    # end
+    rec = hit(world, ray, Float32(0.0001), Inf32)
+    if rec.val != nothing
+        target = rec.val.point + random_in_unit_hemisphere(rec.val.normal)
+        return 0.5 * ray_color(Ray(rec.val.point, target - rec.val.point), world, depth-1)
+    end
+
     unit_direction = normalize(ray.direction)
     t = 0.5 * (y(unit_direction) + 1.0)
     return (1.0-t) * color(1.0, 1.0, 1.0) + t * color(0.5, 0.7, 1.0);
@@ -166,10 +189,11 @@ function write_color(pixel_color::Color, samples::Int)
 
     r, g, b = x(pixel_color), y(pixel_color), z(pixel_color)
 
+    # Divide the color by the number of samples and gamma-correct for gamma=2.0.
     scale = 1.0 / Float32(samples)
-    r *= scale
-    g *= scale
-    b *= scale
+    r = sqrt(scale * r)
+    g = sqrt(scale * g)
+    b = sqrt(scale * b)
 
     max = 256
     ir = floor(Int, max * clamp(r, 0, 0.999))
@@ -206,6 +230,7 @@ function main()
     image_width = 400
     image_height = floor(Int, Float32(image_width) / aspect_ratio)
     samples_per_pixel = 100
+    max_depth = 50
 
     # World
     
@@ -222,7 +247,7 @@ function main()
     
     @printf "P3\n%d %d\n255\n" image_width image_height
 
-    for j in reverse(0:(image_height-1))
+    for j in ProgressBar(reverse(0:(image_height-1)))
         for i in 0:(image_width-1)
 
             pixel_color = color(0,0,0)
@@ -233,7 +258,7 @@ function main()
                 v = (Float32(j) + rand(Float32)) / (image_height-1)
 
                 ray = get_ray(camera, u, v)
-                pixel_color .+= ray_color(ray, world)
+                pixel_color .+= ray_color(ray, world, max_depth)
             end
             write_color(pixel_color, samples_per_pixel)
         end
