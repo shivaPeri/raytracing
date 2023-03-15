@@ -4,37 +4,11 @@ using Parameters
 using ProgressBars
 using LinearAlgebra
 
+include("utils.jl")
+using .Utils
 
-# Add Type Aliases for relevant types
-Point3 = Array{Float64,1}
-Vec3 = Array{Float64,1}
-Color = Array{Float64,1}
-
-point3(x, y, z) = Point3([x,y,z])
-vec3(x, y, z) = Vec3([x,y,z])
-color(x, y, z) = Color([x,y,z])
-
-# Accessor methods
-x = v -> v[1]
-y = v -> v[2]
-z = v -> v[3]
-
-# Ray Class and associated methods
-
-struct Ray
-    origin::Point3
-    direction::Vec3
-end
-
-function at(ray::Ray, t)
-    return ray.origin .+ t * ray.direction
-end
-
-# makes sure surface normals always point outwards
-function set_face_normal(ray::Ray, outward_normal::Vec3)::Vec3
-    front_face = dot(ray.direction, outward_normal) < 0
-    return front_face ? outward_normal : -outward_normal
-end
+include("rays.jl")
+using .Rays
 
 # Hittable Class and associated methods
 
@@ -52,11 +26,6 @@ end
 # constructors
 Hit() = Hit(nothing)
 Hit(p::Point3, n::Vec3, t::Float32) = Hit(Hit_Record(p,n,t))
-
-# # Define methods for the Option type
-# Base.getindex(o::Hit) = o.val
-# Base.isnothing(o::Hit) = isnothing(o.value)
-# Base.isdefined(o::Hit) = !isnothing(o.value)
 
 abstract type Hittable end
 
@@ -117,31 +86,8 @@ function hit(sphere::Sphere, ray::Ray, t_min::Float32, t_max::Float32)::Hit
     outward_normal = (point .- sphere.center) ./ sphere.radius
     normal = set_face_normal(ray, outward_normal)
     rec = Hit(point, normal, Float32(root))
-    return rec
-    
-    # rec.t = root
-    # rec.point = at(ray, rec.t)
-
-    # outward_normal = (rec.point .- sphere.center) ./ sphere.radius
-    # rec.normal = set_face_normal(ray, outward_normal)
-    
-    # return true
+    return rec 
 end
-
-# function hit_sphere(center, radius, r)::Float32
-#     oc = r.origin .- center
-#     a = norm(r.direction)^2
-#     half_b = dot(oc, r.direction)
-#     c = norm(oc)^2 - radius .* radius
-#     discriminant = half_b .* half_b - a .* c
-
-#     if discriminant < 0
-#         return -1.0
-#     else
-#         return (-half_b .- sqrt(discriminant) ) ./ a
-#     end
-
-# end
 
 # Hittable List Class
 
@@ -182,25 +128,6 @@ function ray_color(ray::Ray, world::Hittable, depth::Int)
     unit_direction = normalize(ray.direction)
     t = 0.5 * (y(unit_direction) + 1.0)
     return (1.0-t) * color(1.0, 1.0, 1.0) + t * color(0.5, 0.7, 1.0);
-end
-
-# Write the translated [0,255] value of each color component.
-function write_color(pixel_color::Color, samples::Int)
-
-    r, g, b = x(pixel_color), y(pixel_color), z(pixel_color)
-
-    # Divide the color by the number of samples and gamma-correct for gamma=2.0.
-    scale = 1.0 / Float32(samples)
-    r = sqrt(scale * r)
-    g = sqrt(scale * g)
-    b = sqrt(scale * b)
-
-    max = 256
-    ir = floor(Int, max * clamp(r, 0, 0.999))
-    ig = floor(Int, max * clamp(g, 0, 0.999))
-    ib = floor(Int, max * clamp(b, 0, 0.999))
-
-    @printf "%d %d %d\n" ir ig ib
 end
 
 
