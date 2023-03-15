@@ -1,6 +1,13 @@
 module Utils
 
+export Point3, Vec3, Color
+export point3, vec3, color
+export x, y, z
+export random_unit_vector, random_in_unit_sphere, random_in_unit_hemisphere
+export write_color
+
 using Printf
+using LinearAlgebra
 
 # Add Type Aliases for relevant types
 Point3 = Array{Float64,1}
@@ -16,6 +23,28 @@ x = v -> v[1]
 y = v -> v[2]
 z = v -> v[3]
 
+# Random vector methods
+function random_in_unit_sphere()::Vec3
+    while true
+        p = rand(Float32, 3)
+        if norm(p) >= 1 continue end
+        return p
+    end
+end
+
+function random_unit_vector()::Vec3
+    p = random_in_unit_sphere()
+    return p / norm(p)
+end
+
+function random_in_unit_hemisphere(normal::Vec3)::Vec3
+    p = random_in_unit_sphere()
+    if (dot(p, normal) > 0.0) # In the same hemisphere as the normal
+        return p
+    else
+        return -p
+    end
+end
 
 # Write the translated [0,255] value of each color component.
 function write_color(pixel_color::Color, samples::Int)
@@ -35,10 +64,5 @@ function write_color(pixel_color::Color, samples::Int)
 
     @printf "%d %d %d\n" ir ig ib
 end
-
-export Point3, Vec3, Color
-export point3, vec3, color
-export x, y, z
-export write_color
 
 end
