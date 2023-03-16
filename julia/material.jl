@@ -22,17 +22,9 @@ function Lambertian(albedo::Color)::Function
         end
 
         tmp = Ray(rec.point, scatter_dir)
-        
-        scattered.direction[1] = tmp.direction[1]
-        scattered.direction[2] = tmp.direction[2]
-        scattered.direction[3] = tmp.direction[3]
-        scattered.origin[1] = tmp.origin[1]
-        scattered.origin[2] = tmp.origin[2]
-        scattered.origin[3] = tmp.origin[3]
-
-        attenuation[1] = albedo[1]
-        attenuation[2] = albedo[2]
-        attenuation[3] = albedo[3]
+        scattered.direction .= tmp.direction
+        scattered.origin .= tmp.origin
+        attenuation .= albedo
         return true
     end
 
@@ -42,19 +34,11 @@ end
 function Metal(albedo::Color)::Function
 
     function scatter(r_in, rec, attenuation::Color, scattered)
-        reflected = reflect(normalize(r_in.direction), rec.normal)        
-        
+        reflected = reflect(normalize(r_in.direction), rec.normal)
         tmp = Ray(rec.point, reflected)
-        scattered.direction[1] = tmp.direction[1]
-        scattered.direction[2] = tmp.direction[2]
-        scattered.direction[3] = tmp.direction[3]
-        scattered.origin[1] = tmp.origin[1]
-        scattered.origin[2] = tmp.origin[2]
-        scattered.origin[3] = tmp.origin[3]
-
-        attenuation[1] = albedo[1]
-        attenuation[2] = albedo[2]
-        attenuation[3] = albedo[3]
+        scattered.direction .= tmp.direction
+        scattered.origin .= tmp.origin
+        attenuation .= albedo
         return dot(scattered.direction, rec.normal) > 0
     end
 

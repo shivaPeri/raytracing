@@ -112,7 +112,7 @@ function main()
 
     # World
 
-    material_ground = Lambertian(color(.8, .8, .8))
+    material_ground = Lambertian(color(.8, .8, 0))
     material_center = Lambertian(color(.7, .3, .3))
     material_left = Metal(color(.8, .8, .8))
     material_right = Metal(color(.8, .6, .2))
