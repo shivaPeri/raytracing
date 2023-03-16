@@ -69,7 +69,7 @@ function hit(world::Hittable_List, ray::Ray, t_min::Float32, t_max::Float32)::Hi
     return rec
 end
 
-function ray_color(ray::Ray, world::Hittable, depth::Int)
+function ray_color(ray::Ray, world::Hittable, depth::Int)::Color
 
     # If we've exceeded the ray bounce limit, no more light is gathered.
     if depth <= 0
@@ -83,7 +83,7 @@ function ray_color(ray::Ray, world::Hittable, depth::Int)
         attenuation = color()
 
         if rec.val.mat(ray, rec.val, attenuation, scattered)
-            return attenuation * ray_color(scattered, world, depth-1)
+            return attenuation .* ray_color(scattered, world, depth-1)
         end
         return color()
         
