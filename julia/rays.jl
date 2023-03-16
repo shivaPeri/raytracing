@@ -12,6 +12,8 @@ struct Ray
     direction::Vec3
 end
 
+Ray() = Ray(point3(), vec3())
+
 function at(ray::Ray, t)
     return ray.origin .+ t * ray.direction
 end
