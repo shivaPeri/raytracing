@@ -4,7 +4,7 @@ export Point3, Vec3, Color
 export point3, vec3, color
 export x, y, z
 export random_unit_vector, random_in_unit_sphere, random_in_unit_hemisphere
-export write_color
+export reflect, write_color
 
 using Printf
 using LinearAlgebra
@@ -13,6 +13,10 @@ using LinearAlgebra
 Point3 = Array{Float64,1}
 Vec3 = Array{Float64,1}
 Color = Array{Float64,1}
+
+point3() = Point3([0,0,0])
+vec3() = Vec3([0,0,0])
+color() = Color([0,0,0])
 
 point3(x, y, z) = Point3([x,y,z])
 vec3(x, y, z) = Vec3([x,y,z])
@@ -44,6 +48,15 @@ function random_in_unit_hemisphere(normal::Vec3)::Vec3
     else
         return -p
     end
+end
+
+function near_zero(e::Vec3)::Bool
+    s = 1e-8
+    return (abs(e[0]) < s) && (abs(e[1]) < s) && (abs(e[2]) < s);
+end
+
+function reflect(v::Vec3, n::Vec3)::Vec3
+    return v - 2 * dot(v, n) * n
 end
 
 # Write the translated [0,255] value of each color component.
