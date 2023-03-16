@@ -11,15 +11,19 @@ include("rays.jl")
 using .Rays
 
 include("camera.jl")
-using .Camera_
+using .CameraModule
 
 include("hittable.jl")
 using .HittableObject
+
+include("material.jl")
+using .MaterialModule
 
 # Sphere Class and associated methods
 struct Sphere <: Hittable
     center::Point3
     radius::Float64
+    mat::Function
 end
 
 function hit(sphere::Sphere, ray::Ray, t_min::Float32, t_max::Float32)::Hit
@@ -44,7 +48,7 @@ function hit(sphere::Sphere, ray::Ray, t_min::Float32, t_max::Float32)::Hit
     point = at(ray, root)
     outward_normal = (point .- sphere.center) ./ sphere.radius
     normal = set_face_normal(ray, outward_normal)
-    rec = Hit(point, normal, Float32(root))
+    rec = Hit(point, normal, Float32(root),sphere.mat)
     return rec 
 end
 
@@ -74,8 +78,17 @@ function ray_color(ray::Ray, world::Hittable, depth::Int)
 
     rec = hit(world, ray, Float32(0.0001), Inf32)
     if rec.val != nothing
-        target = rec.val.point + random_in_unit_hemisphere(rec.val.normal)
-        return 0.5 * ray_color(Ray(rec.val.point, target - rec.val.point), world, depth-1)
+
+        scattered = Ray()
+        attenuation = color()
+
+        if rec.val.mat(ray, rec.val, attenuation, scattered)
+            return attenuation * ray_color(scattered, world, depth-1)
+        end
+        return color()
+        
+        # target = rec.val.point + random_in_unit_hemisphere(rec.val.normal)
+        # return 0.5 * ray_color(Ray(rec.val.point, target - rec.val.point), world, depth-1)
     end
 
     unit_direction = normalize(ray.direction)
@@ -98,10 +111,19 @@ function main()
     max_depth = 50
 
     # World
+
+    material_ground = Lambertian(color(.8, .8, .8))
+    material_center = Lambertian(color(.7, .3, .3))
+    material_left = Metal(color(.8, .8, .8))
+    material_right = Metal(color(.8, .6, .2))
     
     world::Hittable_List = Hittable_List([
-        Sphere(point3(0,0,-1), 0.5),
-        Sphere(point3(0,-100.5,-1), 100)
+        Sphere(point3(0, -100.5, -1), 100, material_ground),
+        Sphere(point3(0,0,-1), 0.5, material_center),
+        Sphere(point3(-1,0,-1), 0.5, material_left),
+        Sphere(point3(1,0,-1), 0.5, material_right)
+        # Sphere(point3(0,0,-1), 0.5),
+        # Sphere(point3(0,-100.5,-1), 100)
     ])
 
     # Camera
