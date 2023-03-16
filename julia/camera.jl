@@ -1,11 +1,9 @@
-module Camera_
+module CameraModule
 
 export Camera
 
 include("utils.jl")
 using .Utils
-include("rays.jl")
-using .Rays
 using Parameters
 
 # Camera Class and associated methods
