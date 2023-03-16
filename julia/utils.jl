@@ -4,7 +4,7 @@ export Point3, Vec3, Color
 export point3, vec3, color
 export x, y, z
 export random_unit_vector, random_in_unit_sphere, random_in_unit_hemisphere
-export reflect, write_color
+export reflect, near_zero, write_color
 
 using Printf
 using LinearAlgebra
@@ -52,7 +52,7 @@ end
 
 function near_zero(e::Vec3)::Bool
     s = 1e-8
-    return (abs(e[0]) < s) && (abs(e[1]) < s) && (abs(e[2]) < s);
+    return (abs(e[1]) < s) && (abs(e[2]) < s) && (abs(e[3]) < s);
 end
 
 function reflect(v::Vec3, n::Vec3)::Vec3
