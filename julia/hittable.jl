@@ -14,6 +14,7 @@ struct Hit_Record
     point::Point3
     normal::Vec3
     t::Float32
+    mat::Function
 end
 
 # Option type for Hit_Record
@@ -23,7 +24,7 @@ end
 
 # constructors
 Hit() = Hit(nothing)
-Hit(p::Point3, n::Vec3, t::Float32) = Hit(Hit_Record(p,n,t))
+Hit(p::Point3, n::Vec3, t::Float32, mat) = Hit(Hit_Record(p,n,t,mat))
 
 abstract type Hittable end
 
