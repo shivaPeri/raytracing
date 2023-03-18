@@ -4,7 +4,7 @@ export Point3, Vec3, Color
 export point3, vec3, color
 export x, y, z
 export random_unit_vector, random_in_unit_sphere, random_in_unit_hemisphere
-export reflect, near_zero, write_color
+export reflect, refract, near_zero, write_color
 
 using Printf
 using LinearAlgebra
@@ -55,8 +55,17 @@ function near_zero(e::Vec3)::Bool
     return (abs(e[1]) < s) && (abs(e[2]) < s) && (abs(e[3]) < s);
 end
 
+# basic geometry
 function reflect(v::Vec3, n::Vec3)::Vec3
     return v - 2 * dot(v, n) * n
+end
+
+# based on Snell's Law
+function refract(uv::Vec3, n::Vec3, η_i_over_η_t::Float32)::Vec3
+    cosθ = minimum(1.0, dot(-uv, n))
+    r_perp = η_i_over_η_t * (uv + cosθ * n)
+    r_parallel = -√(abs(1.0 - norm(r_perp)^2)) * n
+    return r_perp + r_parallel
 end
 
 # Write the translated [0,255] value of each color component.

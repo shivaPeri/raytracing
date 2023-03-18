@@ -1,6 +1,5 @@
 using Printf
 using Random
-# using Parameters
 using ProgressBars
 using LinearAlgebra
 
@@ -60,7 +59,6 @@ function hit(world::Hittable_List, ray::Ray, t_min::Float32, t_max::Float32)::Hi
     for object in world.objects
         tmp = hit(object, ray, t_min, closest_so_far)
         if tmp.val != nothing
-            # rec = Hit(tmp.point, tmp.normal, tmp.t)
             rec = tmp
             closest_so_far = rec.val.t
         end
@@ -113,17 +111,17 @@ function main()
     # World
 
     material_ground = Lambertian(color(.8, .8, 0))
-    material_center = Lambertian(color(.7, .3, .3))
-    material_left = Metal(color(.8, .8, .8))
-    material_right = Metal(color(.8, .6, .2))
+    # material_center = Lambertian(color(.7, .3, .3))
+    # material_left = Metal(color(.8, .8, .8), 0.3)
+    material_center = Dielectric(1.5)
+    material_left = Dielectric(1.5)
+    material_right = Metal(color(.8, .6, .2), 1.)
     
     world::Hittable_List = Hittable_List([
         Sphere(point3(0, -100.5, -1), 100, material_ground),
         Sphere(point3(0,0,-1), 0.5, material_center),
         Sphere(point3(-1,0,-1), 0.5, material_left),
         Sphere(point3(1,0,-1), 0.5, material_right)
-        # Sphere(point3(0,0,-1), 0.5),
-        # Sphere(point3(0,-100.5,-1), 100)
     ])
 
     # Camera

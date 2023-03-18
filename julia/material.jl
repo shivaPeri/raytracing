@@ -1,6 +1,6 @@
 module MaterialModule
 
-export Lambertian, Metal
+export Lambertian, Metal, Dielectric
 
 include("utils.jl")
 using .Utils
@@ -21,9 +21,8 @@ function Lambertian(albedo::Color)::Function
             scatter_dir = rec.normal
         end
 
-        tmp = Ray(rec.point, scatter_dir)
-        scattered.direction .= tmp.direction
-        scattered.origin .= tmp.origin
+        scattered.point .= rec.point
+        scattered.direction .= scatter_dir
         attenuation .= albedo
         return true
     end
@@ -31,18 +30,36 @@ function Lambertian(albedo::Color)::Function
     return scatter
 end
 
-function Metal(albedo::Color)::Function
+function Metal(albedo::Color, fuzz::Float64)::Function
 
     function scatter(r_in, rec, attenuation::Color, scattered)
         reflected = reflect(normalize(r_in.direction), rec.normal)
-        tmp = Ray(rec.point, reflected)
-        scattered.direction .= tmp.direction
-        scattered.origin .= tmp.origin
+        scattered.origin .= rec.point
+        scattered.direction .= reflected + fuzz * random_in_unit_sphere()
         attenuation .= albedo
         return dot(scattered.direction, rec.normal) > 0
     end
 
     return scatter
 end
+
+# ir, index of refraction
+function Dielectric(ir)
+
+    function scatter(r_in, rec, attenuation::Color, scattered)
+        attenuation .= color(1,1,1)
+        refraction_ratio = rec.front_face ? (1.0/ir) : ir
+
+        unit_dir = normalize(r_in.direction)
+        refracted = refract(unit_dir, rec.normal, refraction_ratio)
+
+        scattered.point .= rec.point
+        scattered.direction .= refracted
+        return true
+    end
+
+    return scatter
+end
+
 
 end
