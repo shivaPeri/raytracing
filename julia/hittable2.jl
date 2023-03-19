@@ -1,4 +1,4 @@
-module HittableObject
+module HittableModule
 
 export Hit_Record, Hit, Hittable, Hittable_List
 export hit
