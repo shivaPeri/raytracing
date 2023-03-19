@@ -62,7 +62,7 @@ end
 
 # based on Snell's Law
 function refract(uv::Vec3, n::Vec3, η_i_over_η_t::Float32)::Vec3
-    cosθ = minimum(1.0, dot(-uv, n))
+    cosθ = min(1.0, dot(-uv, n))
     r_perp = η_i_over_η_t * (uv + cosθ * n)
     r_parallel = -√(abs(1.0 - norm(r_perp)^2)) * n
     return r_perp + r_parallel
