@@ -21,7 +21,7 @@ function Lambertian(albedo::Color)::Function
             scatter_dir = rec.normal
         end
 
-        scattered.point .= rec.point
+        scattered.origin .= rec.point
         scattered.direction .= scatter_dir
         attenuation .= albedo
         return true
@@ -48,12 +48,12 @@ function Dielectric(ir)
 
     function scatter(r_in, rec, attenuation::Color, scattered)
         attenuation .= color(1,1,1)
-        refraction_ratio = rec.front_face ? (1.0/ir) : ir
+        refraction_ratio::Float32 = rec.front ? (1.0/ir) : ir
 
         unit_dir = normalize(r_in.direction)
         refracted = refract(unit_dir, rec.normal, refraction_ratio)
 
-        scattered.point .= rec.point
+        scattered.origin .= rec.point
         scattered.direction .= refracted
         return true
     end

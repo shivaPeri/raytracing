@@ -1,6 +1,8 @@
 module HittableModule
 
-export Hit_Record, Hit, Hittable, Hittable_List
+export HitRecord, Hittable, Hittable_List
+export set_face_normal
+export Sphere
 export hit
 
 include("utils.jl")
@@ -9,8 +11,10 @@ using .Utils
 include("rays.jl")
 using .Rays
 
+using LinearAlgebra
+
 # Hittable Class and associated methods
-struct Hit_Record
+mutable struct HitRecord
     point::Point3
     normal::Vec3
     t::Float32
@@ -18,19 +22,21 @@ struct Hit_Record
     mat::Function
 end
 
-# Option type for Hit_Record
-mutable struct Hit
-    val::Union{Hit_Record, Nothing}
+# store the orientation of the face wrt. the ray
+# makes sure surface normals always point outwards
+function set_face_normal(rec::HitRecord, ray, outward_normal)
+    rec.front = dot(ray.direction, outward_normal) < 0
+    rec.normal .= rec.front ? outward_normal : -outward_normal
 end
 
-# constructors
-Hit() = Hit(nothing)
-Hit(p::Point3, n::Vec3, t::Float32, mat) = Hit(Hit_Record(p,n,t,true,mat))
+no_mat(a,b,c,d) = false
+HitRecord() = HitRecord(point3(),vec3(),0.,true,no_mat)
+HitRecord(p::Point3, n::Vec3, t::Float32, mat::Function) = HitRecord(p,n,t,true,mat)
 
 abstract type Hittable end
 
 # generic hit interface
-function hit(obj::Hittable, ray::Ray, t_min::Float32, t_max::Float32)::Hit
+function hit(obj::Hittable, ray, t_min::Float32, t_max::Float32)
     throw("unimplemented")
 end
 
@@ -48,14 +54,14 @@ struct Sphere <: Hittable
     mat::Function
 end
 
-function hit(sphere::Sphere, ray::Ray, t_min::Float32, t_max::Float32)::Hit
+function hit(sphere::Sphere, ray, t_min::Float32, t_max::Float32, rec::HitRecord)::Bool
     oc = ray.origin .- sphere.center
     a = norm(ray.direction)^2
     half_b = dot(oc, ray.direction)
     c = norm(oc)^2 - sphere.radius * sphere.radius
     
     discriminant = half_b * half_b - a * c
-    if discriminant < 0 return Hit() end
+    if discriminant < 0 return false end
     sqrtd = sqrt(discriminant)
 
     # Find the nearest root that lies in the acceptable range.
@@ -63,31 +69,39 @@ function hit(sphere::Sphere, ray::Ray, t_min::Float32, t_max::Float32)::Hit
     if (root < t_min || t_max < root)
         root = (-half_b + sqrtd) / a
         if (root < t_min || t_max < root) 
-            return Hit()
+            return false
         end
     end
 
-    point = at(ray, root)
-    outward_normal = (point .- sphere.center) ./ sphere.radius
-    normal = set_face_normal(ray, outward_normal)
-    rec = Hit(point, normal, Float32(root),sphere.mat)
-    return rec 
+    # populate the HitRecord data fields
+    rec.t = Float32(root)
+    rec.point .= at(ray, root)
+    outward_normal = (rec.point - sphere.center) / sphere.radius
+    set_face_normal(rec, ray, outward_normal)
+    rec.mat = sphere.mat
+
+    return true
 end
 
-function hit(world::Hittable_List, ray::Ray, t_min::Float32, t_max::Float32)::Hit
+function hit(world::Hittable_List, ray, t_min::Float32, t_max::Float32, rec::HitRecord)::Bool
 
-    rec = Hit()
+    hit_anything = false
+    tmp = HitRecord()
     closest_so_far = t_max
 
     for object in world.objects
-        tmp = hit(object, ray, t_min, closest_so_far)
-        if tmp.val != nothing
-            rec = tmp
-            closest_so_far = rec.val.t
+        if hit(object, ray, t_min, closest_so_far, tmp)
+            hit_anything = true
+            closest_so_far = tmp.t
+            rec.point .= tmp.point
+            rec.normal .= tmp.normal
+            rec.t = tmp.t
+            rec.mat = tmp.mat
+            rec.front = tmp.front
         end
     end
 
-    return rec
+    return hit_anything
 end
 
 end

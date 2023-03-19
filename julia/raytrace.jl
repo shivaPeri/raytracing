@@ -12,60 +12,63 @@ using .Rays
 include("camera.jl")
 using .CameraModule
 
-include("hittable.jl")
-using .HittableObject
+# include("hittable.jl")
+# using .HittableObject
+
+include("hittable2.jl")
+using .HittableModule
 
 include("material.jl")
 using .MaterialModule
 
-# Sphere Class and associated methods
-struct Sphere <: Hittable
-    center::Point3
-    radius::Float64
-    mat::Function
-end
+# # Sphere Class and associated methods
+# struct Sphere <: Hittable
+#     center::Point3
+#     radius::Float64
+#     mat::Function
+# end
 
-function hit(sphere::Sphere, ray::Ray, t_min::Float32, t_max::Float32)::Hit
-    oc = ray.origin .- sphere.center
-    a = norm(ray.direction)^2
-    half_b = dot(oc, ray.direction)
-    c = norm(oc)^2 - sphere.radius * sphere.radius
+# function hit(sphere::Sphere, ray::Ray, t_min::Float32, t_max::Float32)::Hit
+#     oc = ray.origin .- sphere.center
+#     a = norm(ray.direction)^2
+#     half_b = dot(oc, ray.direction)
+#     c = norm(oc)^2 - sphere.radius * sphere.radius
     
-    discriminant = half_b * half_b - a * c
-    if discriminant < 0 return Hit() end
-    sqrtd = sqrt(discriminant)
+#     discriminant = half_b * half_b - a * c
+#     if discriminant < 0 return Hit() end
+#     sqrtd = sqrt(discriminant)
 
-    # Find the nearest root that lies in the acceptable range.
-    root = (-half_b - sqrtd) / a
-    if (root < t_min || t_max < root)
-        root = (-half_b + sqrtd) / a
-        if (root < t_min || t_max < root) 
-            return Hit()
-        end
-    end
+#     # Find the nearest root that lies in the acceptable range.
+#     root = (-half_b - sqrtd) / a
+#     if (root < t_min || t_max < root)
+#         root = (-half_b + sqrtd) / a
+#         if (root < t_min || t_max < root) 
+#             return Hit()
+#         end
+#     end
 
-    point = at(ray, root)
-    outward_normal = (point .- sphere.center) ./ sphere.radius
-    normal = set_face_normal(ray, outward_normal)
-    rec = Hit(point, normal, Float32(root),sphere.mat)
-    return rec 
-end
+#     point = at(ray, root)
+#     outward_normal = (point .- sphere.center) ./ sphere.radius
+#     normal = set_face_normal(ray, outward_normal)
+#     rec = Hit(point, normal, Float32(root),sphere.mat)
+#     return rec 
+# end
 
-function hit(world::Hittable_List, ray::Ray, t_min::Float32, t_max::Float32)::Hit
+# function hit(world::Hittable_List, ray::Ray, t_min::Float32, t_max::Float32)::Hit
 
-    rec = Hit()
-    closest_so_far = t_max
+#     rec = Hit()
+#     closest_so_far = t_max
 
-    for object in world.objects
-        tmp = hit(object, ray, t_min, closest_so_far)
-        if tmp.val != nothing
-            rec = tmp
-            closest_so_far = rec.val.t
-        end
-    end
+#     for object in world.objects
+#         tmp = hit(object, ray, t_min, closest_so_far)
+#         if tmp.val != nothing
+#             rec = tmp
+#             closest_so_far = rec.val.t
+#         end
+#     end
 
-    return rec
-end
+#     return rec
+# end
 
 function ray_color(ray::Ray, world::Hittable, depth::Int)::Color
 
@@ -74,13 +77,13 @@ function ray_color(ray::Ray, world::Hittable, depth::Int)::Color
         return color(0,0,0)
     end
 
-    rec = hit(world, ray, Float32(0.0001), Inf32)
-    if rec.val != nothing
+    rec = HitRecord()
+    if hit(world, ray, Float32(0.0001), Inf32, rec)
 
         scattered = Ray()
         attenuation = color()
 
-        if rec.val.mat(ray, rec.val, attenuation, scattered)
+        if rec.mat(ray, rec, attenuation, scattered)
             return attenuation .* ray_color(scattered, world, depth-1)
         end
         return color()
