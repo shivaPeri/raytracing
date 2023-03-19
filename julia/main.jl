@@ -54,6 +54,15 @@ function main()
 
     # World
 
+    # R = cos(Base.π / 4)
+    # material_left = Lambertian(color(0,0,1))
+    # material_right = Lambertian(color(1,0,0))
+
+    # world::HittableList = HittableList([
+    #     Sphere(point3(-R,0,-1), R, material_left)
+    #     Sphere(point3(R,0,-1), R, material_right)
+    # ])
+
     material_ground = Lambertian(color(.8, .8, 0))
     # material_center = Lambertian(color(.7, .3, .3))
     # material_left = Metal(color(.8, .8, .8), 0.3)
@@ -62,16 +71,17 @@ function main()
     material_left = Dielectric(1.5)
     material_right = Metal(color(.8, .6, .2), 1.)
     
-    world::Hittable_List = Hittable_List([
+    world::HittableList = HittableList([
         Sphere(point3(0, -100.5, -1), 100, material_ground),
         Sphere(point3(0,0,-1), 0.5, material_center),
         Sphere(point3(-1,0,-1), 0.5, material_left),
+        Sphere(point3(-1,0,-1), -0.4, material_left),
         Sphere(point3(1,0,-1), 0.5, material_right)
     ])
 
     # Camera
     
-    camera::Camera = Camera()
+    camera::Camera = Camera(point3(-2,-2,1), point3(0,0,-1), vec3(0,1,0), 20.0, aspect_ratio)
     
     # Render
     
