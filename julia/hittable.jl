@@ -1,6 +1,6 @@
 module HittableModule
 
-export HitRecord, Hittable, Hittable_List
+export HitRecord, Hittable, HittableList
 export set_face_normal
 export Sphere
 export hit
@@ -42,7 +42,7 @@ end
 
 # Hittable List Class
 
-struct Hittable_List <: Hittable
+struct HittableList <: Hittable
     objects::Vector{Hittable}
 end
 
@@ -83,7 +83,7 @@ function hit(sphere::Sphere, ray, t_min::Float32, t_max::Float32, rec::HitRecord
     return true
 end
 
-function hit(world::Hittable_List, ray, t_min::Float32, t_max::Float32, rec::HitRecord)::Bool
+function hit(world::HittableList, ray, t_min::Float32, t_max::Float32, rec::HitRecord)::Bool
 
     hit_anything = false
     tmp = HitRecord()
