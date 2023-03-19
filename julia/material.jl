@@ -43,6 +43,13 @@ function Metal(albedo::Color, fuzz::Float64)::Function
     return scatter
 end
 
+# Schlick's approximation for reflectance
+function reflectance(cosine, ref_idx)
+    rθ = (1-ref_idx) / (1 + ref_idx)
+    rθ = rθ^2
+    return rθ + (1-rθ) * (1-cosine)^5
+end
+
 # ir, index of refraction
 function Dielectric(ir)
 
@@ -51,10 +58,21 @@ function Dielectric(ir)
         refraction_ratio::Float32 = rec.front ? (1.0/ir) : ir
 
         unit_dir = normalize(r_in.direction)
-        refracted = refract(unit_dir, rec.normal, refraction_ratio)
+        cosθ = min(dot(unit_dir, rec.normal), 1.0)
+        sinθ = √(1.0 - cosθ^2)
+        cannot_refract = refraction_ratio * sinθ > 1.0
+
+        if cannot_refract || reflectance(cosθ, refraction_ratio) > rand()
+            # cannot refract (no solution), must reflect
+            direction = reflect(unit_dir, rec.normal)
+        else
+            # can refract    
+            direction = refract(unit_dir, rec.normal, refraction_ratio)
+        end
+        
 
         scattered.origin .= rec.point
-        scattered.direction .= refracted
+        scattered.direction .= direction
         return true
     end
 
