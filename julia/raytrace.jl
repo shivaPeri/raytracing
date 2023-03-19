@@ -12,65 +12,13 @@ using .Rays
 include("camera.jl")
 using .CameraModule
 
-# include("hittable.jl")
-# using .HittableObject
-
-include("hittable2.jl")
+include("hittable.jl")
 using .HittableModule
 
 include("material.jl")
 using .MaterialModule
 
-# # Sphere Class and associated methods
-# struct Sphere <: Hittable
-#     center::Point3
-#     radius::Float64
-#     mat::Function
-# end
-
-# function hit(sphere::Sphere, ray::Ray, t_min::Float32, t_max::Float32)::Hit
-#     oc = ray.origin .- sphere.center
-#     a = norm(ray.direction)^2
-#     half_b = dot(oc, ray.direction)
-#     c = norm(oc)^2 - sphere.radius * sphere.radius
-    
-#     discriminant = half_b * half_b - a * c
-#     if discriminant < 0 return Hit() end
-#     sqrtd = sqrt(discriminant)
-
-#     # Find the nearest root that lies in the acceptable range.
-#     root = (-half_b - sqrtd) / a
-#     if (root < t_min || t_max < root)
-#         root = (-half_b + sqrtd) / a
-#         if (root < t_min || t_max < root) 
-#             return Hit()
-#         end
-#     end
-
-#     point = at(ray, root)
-#     outward_normal = (point .- sphere.center) ./ sphere.radius
-#     normal = set_face_normal(ray, outward_normal)
-#     rec = Hit(point, normal, Float32(root),sphere.mat)
-#     return rec 
-# end
-
-# function hit(world::Hittable_List, ray::Ray, t_min::Float32, t_max::Float32)::Hit
-
-#     rec = Hit()
-#     closest_so_far = t_max
-
-#     for object in world.objects
-#         tmp = hit(object, ray, t_min, closest_so_far)
-#         if tmp.val != nothing
-#             rec = tmp
-#             closest_so_far = rec.val.t
-#         end
-#     end
-
-#     return rec
-# end
-
-function ray_color(ray::Ray, world::Hittable, depth::Int)::Color
+function ray_color(ray, world::Hittable, depth::Int)::Color
 
     # If we've exceeded the ray bounce limit, no more light is gathered.
     if depth <= 0
@@ -87,18 +35,11 @@ function ray_color(ray::Ray, world::Hittable, depth::Int)::Color
             return attenuation .* ray_color(scattered, world, depth-1)
         end
         return color()
-        
-        # target = rec.val.point + random_in_unit_hemisphere(rec.val.normal)
-        # return 0.5 * ray_color(Ray(rec.val.point, target - rec.val.point), world, depth-1)
     end
 
     unit_direction = normalize(ray.direction)
     t = 0.5 * (y(unit_direction) + 1.0)
     return (1.0-t) * color(1.0, 1.0, 1.0) + t * color(0.5, 0.7, 1.0);
-end
-
-function get_ray(camera::Camera, u::Float32, v::Float32)
-    return Ray(camera.origin, camera.lower_left_corner + u * camera.horizontal +  v * camera.vertical - camera.origin)
 end
 
 function main()

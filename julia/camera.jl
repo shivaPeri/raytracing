@@ -1,9 +1,11 @@
 module CameraModule
 
-export Camera
+export Camera, get_ray
 
 include("utils.jl")
+include("rays.jl")
 using .Utils
+using .Rays
 using Parameters
 
 # Camera Class and associated methods
@@ -17,6 +19,11 @@ using Parameters
     horizontal = vec3(viewport_width, 0, 0)
     vertical = vec3(0, viewport_height, 0)
     lower_left_corner = origin - horizontal/2 - vertical/2 - vec3(0, 0, focal_length)
+end
+
+
+function get_ray(camera::Camera, u::Float32, v::Float32)
+    return Ray(camera.origin, camera.lower_left_corner + u * camera.horizontal +  v * camera.vertical - camera.origin)
 end
 
 end
