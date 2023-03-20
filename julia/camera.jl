@@ -15,10 +15,29 @@ struct Camera
     vertical::Vec3
 end
 
-function Camera(lookFrom::Point3, lookAt::Point3, vup::Vec3, vfov, aspect_ratio)
+function Camera()
+    aspect_ratio = 16.0 / 9.0
+    viewport_height = 2.0
+    viewport_width = aspect_ratio * viewport_height
+    focal_length = 1.0
+
+    origin = point3(0, 0, 0)
+    horizontal = vec3(viewport_width, 0, 0)
+    vertical = vec3(0, viewport_height, 0)
+    lower_left_corner = origin - horizontal/2 - vertical/2 - vec3(0, 0, focal_length)
+
+    return Camera(
+        origin,
+        lower_left_corner,
+        horizontal,
+        vertical
+    )
+end
+
+function Camera(lookFrom::Point3, lookAt::Point3, vup::Vec3, vfov::Float64, aspect_ratio::Float64)
 
     θ = deg2rad(vfov)
-    h = tan(θ/2)
+    h = Base.tan(θ/2)
     viewport_height = 2.0 * h
     viewport_width = aspect_ratio * viewport_height
 
@@ -28,7 +47,7 @@ function Camera(lookFrom::Point3, lookAt::Point3, vup::Vec3, vfov, aspect_ratio)
     
     focal_length = 1.0
 
-    origin = lookFrom
+    origin = copy(lookFrom)
     horizontal = viewport_width * u
     vertical = viewport_height * v
     lower_left_corner = origin - horizontal/2 - vertical/2 - w
@@ -41,8 +60,8 @@ function Camera(lookFrom::Point3, lookAt::Point3, vup::Vec3, vfov, aspect_ratio)
     )
 end
 
-function get_ray(camera::Camera, u::Float32, v::Float32)
-    return Ray(camera.origin, camera.lower_left_corner + u * camera.horizontal +  v * camera.vertical - camera.origin)
+function get_ray(c::Camera, s::Float64, t::Float64)
+    return Ray(c.origin, c.lower_left_corner + s*c.horizontal +  t*c.vertical - c.origin)
 end
 
 end

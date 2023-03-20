@@ -17,7 +17,7 @@ using LinearAlgebra
 mutable struct HitRecord
     point::Point3
     normal::Vec3
-    t::Float32
+    t::Float64
     front::Bool
     mat::Function
 end
@@ -31,12 +31,12 @@ end
 
 no_mat(a,b,c,d) = false
 HitRecord() = HitRecord(point3(),vec3(),0.,true,no_mat)
-HitRecord(p::Point3, n::Vec3, t::Float32, mat::Function) = HitRecord(p,n,t,true,mat)
+HitRecord(p::Point3, n::Vec3, t::Float64, mat::Function) = HitRecord(p,n,t,true,mat)
 
 abstract type Hittable end
 
 # generic hit interface
-function hit(obj::Hittable, ray, t_min::Float32, t_max::Float32)
+function hit(obj::Hittable, ray, t_min::Float64, t_max::Float64)
     throw("unimplemented")
 end
 
@@ -54,7 +54,7 @@ struct Sphere <: Hittable
     mat::Function
 end
 
-function hit(sphere::Sphere, ray, t_min::Float32, t_max::Float32, rec::HitRecord)::Bool
+function hit(sphere::Sphere, ray, t_min::Float64, t_max::Float64, rec::HitRecord)::Bool
     oc = ray.origin .- sphere.center
     a = norm(ray.direction)^2
     half_b = dot(oc, ray.direction)
@@ -74,7 +74,7 @@ function hit(sphere::Sphere, ray, t_min::Float32, t_max::Float32, rec::HitRecord
     end
 
     # populate the HitRecord data fields
-    rec.t = Float32(root)
+    rec.t = Float64(root)
     rec.point .= at(ray, root)
     outward_normal = (rec.point - sphere.center) / sphere.radius
     set_face_normal(rec, ray, outward_normal)
@@ -83,7 +83,7 @@ function hit(sphere::Sphere, ray, t_min::Float32, t_max::Float32, rec::HitRecord
     return true
 end
 
-function hit(world::HittableList, ray, t_min::Float32, t_max::Float32, rec::HitRecord)::Bool
+function hit(world::HittableList, ray, t_min::Float64, t_max::Float64, rec::HitRecord)::Bool
 
     hit_anything = false
     tmp = HitRecord()

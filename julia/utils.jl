@@ -30,7 +30,7 @@ z = v -> v[3]
 # Random vector methods
 function random_in_unit_sphere()::Vec3
     while true
-        p = rand(Float32, 3)
+        p = rand(Float64, 3)
         if norm(p) >= 1 continue end
         return p
     end
@@ -61,7 +61,7 @@ function reflect(v::Vec3, n::Vec3)::Vec3
 end
 
 # based on Snell's Law
-function refract(uv::Vec3, n::Vec3, η_i_over_η_t::Float32)::Vec3
+function refract(uv::Vec3, n::Vec3, η_i_over_η_t::Float64)::Vec3
     cosθ = min(1.0, dot(-uv, n))
     r_perp = η_i_over_η_t * (uv + cosθ * n)
     r_parallel = -√(abs(1.0 - norm(r_perp)^2)) * n
@@ -74,7 +74,7 @@ function write_color(pixel_color::Color, samples::Int)
     r, g, b = x(pixel_color), y(pixel_color), z(pixel_color)
 
     # Divide the color by the number of samples and gamma-correct for gamma=2.0.
-    scale = 1.0 / Float32(samples)
+    scale = 1.0 / Float64(samples)
     r = sqrt(scale * r)
     g = sqrt(scale * g)
     b = sqrt(scale * b)

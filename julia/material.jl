@@ -30,7 +30,7 @@ function Lambertian(albedo::Color)::Function
     return scatter
 end
 
-function Metal(albedo::Color, fuzz::Float64)::Function
+function Metal(albedo::Color, fuzz::Float64)::Function 
 
     function scatter(r_in, rec, attenuation::Color, scattered)
         reflected = reflect(normalize(r_in.direction), rec.normal)
@@ -46,16 +46,15 @@ end
 # Schlick's approximation for reflectance
 function reflectance(cosine, ref_idx)
     rθ = (1-ref_idx) / (1 + ref_idx)
-    rθ = rθ^2
-    return rθ + (1-rθ) * (1-cosine)^5
+    return rθ^2 + (1-rθ^2) * (1-cosine)^5
 end
 
 # ir, index of refraction
 function Dielectric(ir)
 
     function scatter(r_in, rec, attenuation::Color, scattered)
-        attenuation .= color(1,1,1)
-        refraction_ratio::Float32 = rec.front ? (1.0/ir) : ir
+        attenuation .= 1.0
+        refraction_ratio = rec.front ? (1.0/ir) : ir
 
         unit_dir = normalize(r_in.direction)
         cosθ = min(dot(unit_dir, rec.normal), 1.0)
