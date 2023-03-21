@@ -193,3 +193,65 @@ fn test_zero() {
     assert_eq!(c.y, 0.);
     assert_eq!(c.z, 0.);
 }
+
+#[test]
+fn test_add_sub() {
+    let a = Vec3::new(1., 2., 3.);
+    let b = Vec3::new(3., 2., 1.);
+
+    let c = a + b;
+    assert_eq!(c.x, 4.);
+    assert_eq!(c.y, 4.);
+    assert_eq!(c.z, 4.);
+
+    let c = a - b;
+    assert_eq!(c.x, -2.);
+    assert_eq!(c.y, 0.);
+    assert_eq!(c.z, 2.);
+}
+
+#[test]
+fn test_scalar_mult() {
+    let a = Vec3::new(1.2, 2.1, 0.5);
+    let b = 2.0 * a;
+    let c = a * 2.0;
+
+    assert_eq!(b.x, 2.4);
+    assert_eq!(b.y, 4.2);
+    assert_eq!(b.z, 1.0);
+
+    assert_eq!(c.x, 2.4);
+    assert_eq!(c.y, 4.2);
+    assert_eq!(c.z, 1.0);
+}
+
+#[test]
+fn test_scalar_div() {
+    let a = Vec3::new(1.2, 2.1, 0.5);
+    let b = a / 2.0;
+    assert_eq!(b.x, 0.6);
+    assert_eq!(b.y, 1.05);
+    assert_eq!(b.z, 0.25);
+}
+
+#[test]
+fn test_vec_mul() {
+    let a = Vec3::new(1.2, 2.1, 0.5);
+    let b = Vec3::new(10.0, 20.0, 30.0);
+    let c = a * b;
+
+    assert_eq!(c.x, 12.0);
+    assert_eq!(c.y, 42.0);
+    assert_eq!(c.z, 15.0);
+}
+
+#[test]
+fn test_vec_div() {
+    let a = Vec3::new(1.0, 2.1, 0.5);
+    let b = Vec3::new(10.0, 20.0, 10.0);
+    let c = a / b;
+
+    assert_eq!(c.x, 0.1);
+    assert_eq!(c.y, 0.105);
+    assert_eq!(c.z, 0.05);
+}
