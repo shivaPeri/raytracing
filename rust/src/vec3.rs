@@ -1,4 +1,4 @@
-// use rand::Rng;
+use rand::Rng;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, Neg, Sub};
 
 #[derive(Debug, Clone, Copy)]
@@ -12,6 +12,7 @@ pub type Point3 = Vec3;
 pub type Color = Vec3;
 
 impl Vec3 {
+    // creation methods
     pub fn new(x: f32, y: f32, z: f32) -> Self {
         Vec3 { x, y, z }
     }
@@ -24,6 +25,26 @@ impl Vec3 {
         }
     }
 
+    pub fn random(min: f32, max: f32) -> Vec3 {
+        let mut rng = rand::thread_rng();
+        Vec3 {
+            x: rng.gen_range(min..max),
+            y: rng.gen_range(min..max),
+            z: rng.gen_range(min..max),
+        }
+    }
+
+    pub fn random_in_unit_sphere() -> Vec3 {
+        loop {
+            let p = Vec3::random(-1.0, 1.0);
+            if p.length_squared() >= 1. {
+                continue;
+            }
+            return p;
+        }
+    }
+
+    // Property methods
     pub fn length(&self) -> f32 {
         self.length_squared().sqrt()
     }
@@ -32,7 +53,7 @@ impl Vec3 {
         self.x * self.x + self.y * self.y + self.z * self.z
     }
 
-    // other methods
+    // calculation methods
     pub fn dot(a: &Vec3, b: &Vec3) -> f32 {
         a.x * b.x + a.y * b.y + a.z * b.z
     }

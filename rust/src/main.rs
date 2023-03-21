@@ -7,10 +7,15 @@ use raytracer::{
     vec3::{Color, Point3, Vec3},
 };
 
-fn ray_color(r: &Ray, world: &HittableList<Sphere>) -> Color {
-    match world.hit(r, 0.0, f32::INFINITY) {
+fn ray_color(r: Ray, world: &HittableList<Sphere>, depth: u32) -> Color {
+    if depth == 0 {
+        return Color::zero();
+    }
+
+    match world.hit(&r, 0.0, f32::INFINITY) {
         Some(hr) => {
-            return 0.5 * (hr.normal + Color::new(1., 1., 1.));
+            let target: Point3 = hr.p + hr.normal + Vec3::random_in_unit_sphere();
+            return 0.5 * ray_color(Ray::new(hr.p, target - hr.p), world, depth - 1);
         }
         None => {
             let unit_direction = r.direction.unit_vector();
@@ -26,6 +31,7 @@ fn main() {
     const image_width: i32 = 400;
     const image_height: i32 = ((image_width as f32) / aspect_ratio) as i32;
     const samples_per_pixel: i32 = 100;
+    const max_depth: u32 = 50;
 
     // World
     let mut world = HittableList::new();
@@ -51,10 +57,10 @@ fn main() {
                 let v: f32 = ((j as f32) + rng.gen_range(0.0..1.0)) / ((image_height - 1) as f32);
 
                 let r = camera.get_ray(u, v);
-                color += ray_color(&r, &world);
+                color += ray_color(r, &world, max_depth);
             }
 
-            color /= (samples_per_pixel as f32);
+            color /= samples_per_pixel as f32;
 
             let ir: u8 = (255.999 * color.x) as u8;
             let ig: u8 = (255.999 * color.y) as u8;
