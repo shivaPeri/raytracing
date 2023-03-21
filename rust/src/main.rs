@@ -1,4 +1,4 @@
-// use palette::{Pixel, Srgb};
+use indicatif::ProgressBar;
 use rand::Rng;
 use raytracer::{
     camera::Camera,
@@ -38,8 +38,10 @@ fn main() {
     // Render
 
     let mut rng = rand::thread_rng();
+    let bar = ProgressBar::new((image_width * image_height) as u64);
 
     println!("P3\n{} {}\n255", image_width, image_height);
+
     for j in (0..image_height).rev() {
         for i in 0..image_width {
             let mut color = Color::zero();
@@ -58,6 +60,8 @@ fn main() {
             let ig: u8 = (255.999 * color.y) as u8;
             let ib: u8 = (255.999 * color.z) as u8;
             println!("{} {} {}", ir, ig, ib);
+            bar.inc(1);
         }
     }
+    bar.finish()
 }
