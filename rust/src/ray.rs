@@ -37,3 +37,42 @@ impl HitRecord {
 pub trait Hittable {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord>;
 }
+
+pub struct HittableList<T>
+where
+    T: Hittable,
+{
+    objects: Vec<T>,
+}
+
+impl<T: Hittable> HittableList<T> {
+    pub fn new() -> Self {
+        HittableList {
+            objects: Vec::new(),
+        }
+    }
+
+    pub fn add(&mut self, thing: T) {
+        self.objects.push(thing);
+    }
+}
+
+impl<T: Hittable> Hittable for HittableList<T> {
+    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+        let mut hit = None;
+        let mut closest_so_far = t_max;
+
+        for obj in self.objects.iter() {
+            let tmp = obj.hit(ray, t_min, closest_so_far);
+            match tmp {
+                None => {}
+                Some(hr) => {
+                    closest_so_far = hr.t;
+                    hit = Some(hr);
+                }
+            }
+        }
+
+        return hit;
+    }
+}

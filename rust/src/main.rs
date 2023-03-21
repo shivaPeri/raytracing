@@ -1,13 +1,21 @@
 // use palette::{Pixel, Srgb};
 use raytracer::{
-    ray::Ray,
+    ray::{Hittable, HittableList, Ray},
+    sphere::Sphere,
     vec3::{Color, Point3, Vec3},
 };
 
-fn ray_color(r: Ray) -> Color {
-    let unit_direction = r.direction.unit_vector();
-    let t = 0.5 * (unit_direction.y + 1.0);
-    return (1.0 - t) * Vec3::new(1., 1., 1.) + t * Vec3::new(0.5, 0.7, 1.);
+fn ray_color(r: &Ray, world: &HittableList<Sphere>) -> Color {
+    match world.hit(r, 0.0, f32::INFINITY) {
+        Some(hr) => {
+            return 0.5 * (hr.normal + Color::new(1., 1., 1.));
+        }
+        None => {
+            let unit_direction = r.direction.unit_vector();
+            let t = 0.5 * (unit_direction.y + 1.0);
+            return (1.0 - t) * Vec3::new(1., 1., 1.) + t * Vec3::new(0.5, 0.7, 1.);
+        }
+    }
 }
 
 fn main() {
@@ -15,6 +23,11 @@ fn main() {
     let aspect_ratio = 16.0 / 9.0;
     let image_width = 400;
     let image_height = ((image_width as f32) / aspect_ratio) as i32;
+
+    // World
+    let mut world = HittableList::new();
+    world.add(Sphere::new(Point3::new(0., 0., -1.), 0.5));
+    world.add(Sphere::new(Point3::new(0., -100.5, -1.), 100.));
 
     // Camera
 
@@ -40,7 +53,7 @@ fn main() {
                 lower_left_corner + u * horizontal + v * vertical - origin,
             );
 
-            let color = ray_color(r);
+            let color = ray_color(&r, &world);
 
             let ir: u8 = (255.999 * color.x) as u8;
             let ig: u8 = (255.999 * color.y) as u8;
