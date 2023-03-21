@@ -1,5 +1,5 @@
 // use rand::Rng;
-use std::ops::{Add, Div, Mul, Neg, Sub};
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, Neg, Sub};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Vec3 {
@@ -78,6 +78,16 @@ impl Add for Vec3 {
     }
 }
 
+impl AddAssign for Vec3 {
+    fn add_assign(&mut self, other: Self) {
+        *self = Self {
+            x: self.x + other.x,
+            y: self.y + other.y,
+            z: self.z + other.z,
+        };
+    }
+}
+
 impl Sub for Vec3 {
     type Output = Self;
 
@@ -143,6 +153,16 @@ impl Div<f32> for Vec3 {
 
     fn div(self, other: f32) -> Self {
         Self {
+            x: self.x / other,
+            y: self.y / other,
+            z: self.z / other,
+        }
+    }
+}
+
+impl DivAssign<f32> for Vec3 {
+    fn div_assign(&mut self, other: f32) {
+        *self = Self {
             x: self.x / other,
             y: self.y / other,
             z: self.z / other,
