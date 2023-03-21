@@ -1,4 +1,5 @@
 // use palette::{Pixel, Srgb};
+use rand::Rng;
 use raytracer::{
     ray::{Hittable, HittableList, Ray},
     sphere::Sphere,
@@ -20,9 +21,10 @@ fn ray_color(r: &Ray, world: &HittableList<Sphere>) -> Color {
 
 fn main() {
     // Image
-    let aspect_ratio = 16.0 / 9.0;
-    let image_width = 400;
-    let image_height = ((image_width as f32) / aspect_ratio) as i32;
+    const aspect_ratio: f32 = 16.0 / 9.0;
+    const image_width: i32 = 400;
+    const image_height: i32 = ((image_width as f32) / aspect_ratio) as i32;
+    const samples_per_pixel: i32 = 100;
 
     // World
     let mut world = HittableList::new();
@@ -42,18 +44,26 @@ fn main() {
         origin - horizontal / 2. - vertical / 2. - Vec3::new(0., 0., focal_length);
 
     // Render
+
+    let mut rng = rand::thread_rng();
+
     println!("P3\n{} {}\n255", image_width, image_height);
     for j in (0..image_height).rev() {
         for i in 0..image_width {
-            let u: f32 = (i as f32) / ((image_width - 1) as f32);
-            let v: f32 = (j as f32) / ((image_height - 1) as f32);
+            let mut color = Color::zero();
 
-            let r = Ray::new(
-                origin,
-                lower_left_corner + u * horizontal + v * vertical - origin,
-            );
+            for _s in 0..samples_per_pixel {
+                let u: f32 = ((i as f32) + rng.gen_range(0.0..1.0)) / ((image_width - 1) as f32);
+                let v: f32 = ((j as f32) + rng.gen_range(0.0..1.0)) / ((image_height - 1) as f32);
 
-            let color = ray_color(&r, &world);
+                let r = Ray::new(
+                    origin,
+                    lower_left_corner + u * horizontal + v * vertical - origin,
+                );
+                color = color.clone() + ray_color(&r, &world);
+            }
+
+            color = color.clone() / (samples_per_pixel as f32);
 
             let ir: u8 = (255.999 * color.x) as u8;
             let ig: u8 = (255.999 * color.y) as u8;
