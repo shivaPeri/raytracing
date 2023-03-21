@@ -12,7 +12,7 @@ fn ray_color(r: Ray, world: &HittableList<Sphere>, depth: u32) -> Color {
         return Color::zero();
     }
 
-    match world.hit(&r, 0.0, f32::INFINITY) {
+    match world.hit(&r, 0.0001, f32::INFINITY) {
         Some(hr) => {
             let target: Point3 = hr.p + hr.normal + Vec3::random_in_unit_sphere();
             return 0.5 * ray_color(Ray::new(hr.p, target - hr.p), world, depth - 1);
