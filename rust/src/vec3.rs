@@ -3,9 +3,9 @@ use std::ops::{Add, Div, Mul, Neg, Sub};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Vec3 {
-    x: f32,
-    y: f32,
-    z: f32,
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
 }
 
 pub type Point3 = Vec3;
@@ -24,19 +24,6 @@ impl Vec3 {
         }
     }
 
-    // Accessor methods
-    pub fn x(&self) -> f32 {
-        self.x
-    }
-
-    pub fn y(&self) -> f32 {
-        self.y
-    }
-
-    pub fn z(&self) -> f32 {
-        self.z
-    }
-
     pub fn length(&self) -> f32 {
         self.length_squared().sqrt()
     }
@@ -46,15 +33,15 @@ impl Vec3 {
     }
 
     // other methods
-    pub fn dot(&self, other: &Vec3) -> f32 {
-        self.x * other.x() + self.y * other.y() + self.z * other.z()
+    pub fn dot(a: &Vec3, b: &Vec3) -> f32 {
+        a.x * b.x + a.y * b.y + a.z * b.z
     }
 
     pub fn cross(&self, other: &Vec3) -> Vec3 {
         Vec3 {
-            x: self.y * other.z() - self.z * other.y(),
-            y: self.z * other.x() - self.x * other.z(),
-            z: self.x * other.y() - self.y * other.x(),
+            x: self.y * other.z - self.z * other.y,
+            y: self.z * other.x - self.x * other.z,
+            z: self.x * other.y - self.y * other.x,
         }
     }
 
@@ -84,9 +71,9 @@ impl Add for Vec3 {
 
     fn add(self, other: Self) -> Self {
         Self {
-            x: self.x + other.x(),
-            y: self.y + other.y(),
-            z: self.z + other.z(),
+            x: self.x + other.x,
+            y: self.y + other.y,
+            z: self.z + other.z,
         }
     }
 }
@@ -96,9 +83,9 @@ impl Sub for Vec3 {
 
     fn sub(self, other: Self) -> Self {
         Self {
-            x: self.x - other.x(),
-            y: self.y - other.y(),
-            z: self.z - other.z(),
+            x: self.x - other.x,
+            y: self.y - other.y,
+            z: self.z - other.z,
         }
     }
 }
@@ -127,14 +114,26 @@ impl Mul<f32> for Vec3 {
     }
 }
 
+impl Mul<Vec3> for f32 {
+    type Output = Vec3;
+
+    fn mul(self, other: Vec3) -> Vec3 {
+        Vec3 {
+            x: self * other.x,
+            y: self * other.y,
+            z: self * other.z,
+        }
+    }
+}
+
 impl Mul<Vec3> for Vec3 {
     type Output = Self;
 
     fn mul(self, other: Vec3) -> Self {
         Self {
-            x: self.x * other.x(),
-            y: self.y * other.y(),
-            z: self.z * other.z(),
+            x: self.x * other.x,
+            y: self.y * other.y,
+            z: self.z * other.z,
         }
     }
 }
@@ -156,9 +155,9 @@ impl Div<Vec3> for Vec3 {
 
     fn div(self, other: Vec3) -> Self {
         Self {
-            x: self.x / other.x(),
-            y: self.y / other.y(),
-            z: self.z / other.z(),
+            x: self.x / other.x,
+            y: self.y / other.y,
+            z: self.z / other.z,
         }
     }
 }
@@ -172,12 +171,25 @@ fn test_new() {
         y: 2.,
         z: 3.,
     };
-    assert_eq!(p.x(), 1.);
-    assert_eq!(p.y(), 2.);
-    assert_eq!(p.z(), 3.);
+    assert_eq!(p.x, 1.);
+    assert_eq!(p.y, 2.);
+    assert_eq!(p.z, 3.);
 
     let q = Vec3::new(1., 2., 3.);
-    assert_eq!(q.x(), 1.);
-    assert_eq!(q.y(), 2.);
-    assert_eq!(q.z(), 3.);
+    assert_eq!(q.x, 1.);
+    assert_eq!(q.y, 2.);
+    assert_eq!(q.z, 3.);
+}
+
+#[test]
+fn test_zero() {
+    let p = Point3::zero();
+    assert_eq!(p.x, 0.);
+    assert_eq!(p.y, 0.);
+    assert_eq!(p.z, 0.);
+
+    let c = Color::zero();
+    assert_eq!(c.x, 0.);
+    assert_eq!(c.y, 0.);
+    assert_eq!(c.z, 0.);
 }
