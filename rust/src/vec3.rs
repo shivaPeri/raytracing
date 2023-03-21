@@ -44,6 +44,20 @@ impl Vec3 {
         }
     }
 
+    pub fn random_in_unit_hemisphere(normal: &Vec3) -> Vec3 {
+        let p = Vec3::random_in_unit_sphere();
+
+        if Vec3::dot(&p, normal) > 0.0 {
+            return p;
+        } else {
+            return -p;
+        }
+    }
+
+    pub fn random_unit_vector() -> Vec3 {
+        Vec3::random_in_unit_sphere().unit_vector()
+    }
+
     // Property methods
     pub fn length(&self) -> f32 {
         self.length_squared().sqrt()
@@ -83,7 +97,12 @@ impl Vec3 {
     }
 
     pub fn near_zero(&self) -> bool {
-        false
+        let e = f32::EPSILON;
+        self.x.abs() < e && self.y.abs() < e && self.z.abs() < e
+    }
+
+    pub fn reflect(v: &Vec3, n: &Vec3) -> Vec3 {
+        return *v - 2.0 * Vec3::dot(v, n) * *n;
     }
 }
 

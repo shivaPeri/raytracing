@@ -1,3 +1,4 @@
+use crate::material::Material;
 use crate::vec3::{Point3, Vec3};
 
 pub struct Ray {
@@ -20,6 +21,7 @@ pub struct HitRecord {
     pub normal: Vec3,
     pub t: f32,
     pub front_face: bool,
+    pub material: Material,
 }
 
 impl HitRecord {

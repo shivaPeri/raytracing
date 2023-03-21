@@ -2,6 +2,7 @@ use indicatif::ProgressBar;
 use rand::Rng;
 use raytracer::{
     camera::Camera,
+    material::{Lambertian, Material, Metal},
     ray::{Hittable, HittableList, Ray},
     sphere::Sphere,
     vec3::{Color, Point3, Vec3},
@@ -9,13 +10,20 @@ use raytracer::{
 
 fn ray_color(r: Ray, world: &HittableList<Sphere>, depth: u32) -> Color {
     if depth == 0 {
-        return Color::zero();
+        Color::zero()
     }
 
     match world.hit(&r, 0.0001, f32::INFINITY) {
         Some(hr) => {
-            let target: Point3 = hr.p + hr.normal + Vec3::random_in_unit_sphere();
-            return 0.5 * ray_color(Ray::new(hr.p, target - hr.p), world, depth - 1);
+            match hr.material.scatter(r, hr) {
+                Some(Some(attenuation), scattered) => {
+                    attenuation * ray_color(scattered, world, depth - 1)
+                }
+                _ => Color::zero(),
+            }
+
+            // let target: Point3 = hr.p + hr.normal + Vec3::random_in_unit_sphere();
+            // return 0.5 * ray_color(Ray::new(hr.p, target - hr.p), world, depth - 1);
         }
         None => {
             let unit_direction = r.direction.unit_vector();
@@ -34,9 +42,33 @@ fn main() {
     const max_depth: u32 = 50;
 
     // World
+
+    let material_ground = Lambertian::new(Color::new(0.8, 0.8, 0.8));
+    let material_center = Lambertian::new(Color::new(0.7, 0.3, 0.3));
+    let material_left = Metal::new(Color::new(0.8, 0.8, 0.8));
+    let material_right = Metal::new(Color::new(0.8, 0.6, 0.2));
+
     let mut world = HittableList::new();
-    world.add(Sphere::new(Point3::new(0., 0., -1.), 0.5));
-    world.add(Sphere::new(Point3::new(0., -100.5, -1.), 100.));
+    world.add(Sphere::new(
+        Point3::new(0.0, -100.5, -1.0),
+        100.0,
+        material_ground,
+    ));
+    world.add(Sphere::new(
+        Point3::new(0.0, 0.0, 0.0),
+        0.5,
+        material_center,
+    ));
+    world.add(Sphere::new(
+        Point3::new(-1.0, 0.0, -1.0),
+        0.5,
+        material_left,
+    ));
+    world.add(Sphere::new(
+        Point3::new(1.0, 0.0, -1.0),
+        0.5,
+        material_right,
+    ));
 
     // Camera
     let camera = Camera::new();
