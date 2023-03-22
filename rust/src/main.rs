@@ -16,7 +16,7 @@ fn ray_color(r: Ray, world: &HittableList<Sphere>, depth: u32) -> Color {
     match world.hit(&r, 0.0001, f32::INFINITY) {
         Some(hr) => {
             match hr.material.scatter(r, hr) {
-                Some(Some(attenuation), scattered) => {
+                Some((Some(attenuation), scattered)) => {
                     attenuation * ray_color(scattered, world, depth - 1)
                 }
                 _ => Color::zero(),

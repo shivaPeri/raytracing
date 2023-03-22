@@ -1,7 +1,7 @@
 use rand::Rng;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, Neg, Sub};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Default, Clone, Copy)]
 pub struct Vec3 {
     pub x: f32,
     pub y: f32,

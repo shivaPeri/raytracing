@@ -1,54 +1,72 @@
-use crate::vec3::{Vec3, Point3, Color}
-use crate::ray::{Ray, HitRecord}
+use crate::ray::{HitRecord, Ray};
+use crate::vec3::{Color, Vec3};
 
 // returns scattered ray (if its exists) and attenuation
 pub trait Scatter {
-	fn scatter(&self, r_in: &Ray, hr: &HitRecord) -> Option<(Option<Ray>, Color)>
+    fn scatter(&self, r_in: &Ray, hr: &HitRecord) -> Option<(Option<Ray>, Color)>;
 }
 
+#[derive(Default, Clone, Copy)]
 pub enum Material {
-	Lambertian(Lambertian),
-	Metal(Metal),
+    Lambertian(Lambertian),
+    Metal(Metal),
+}
+
+impl Scatter for Material {
+    fn scatter(&self, r_in: &Ray, hr: &HitRecord) -> Option<(Option<Ray>, Color)> {
+        match self {
+            Material::Lambertian(x) => x.scatter(r_in, hr),
+            Material::Metal(x) => x.scatter(r_in, hr),
+        }
+    }
+}
+
+#[derive(Default, Clone, Copy)]
+pub struct Lambertian {
+    pub albedo: Color,
 }
 
 impl Lambertian {
-	pub fn new(albedo: Color) -> Self {
-		Lambertian{ albedo }
-	}
+    pub fn new(albedo: Color) -> Self {
+        Lambertian { albedo }
+    }
 }
 
 impl Scatter for Lambertian {
-	fn scatter(r_in &Ray, hr: &HitRecord) -> Option<(Option<Ray>, Color)> {
+    fn scatter(&self, r_in: &Ray, hr: &HitRecord) -> Option<(Option<Ray>, Color)> {
+        let mut scatter_dir = hr.normal + Vec3::random_unit_vector();
 
-		let mut scatter_dir = hr.normal + Vec3::random_unit_vector();
+        if scatter_dir.near_zero() {
+            scatter_dir = hr.normal;
+        }
 
-		if scatter_dir.near_zero() {
-			scatter_dir = hr.normal;
-		}
+        let scattered = Ray::new(hr.p, scatter_dir);
+        let attenuation = self.albedo;
+        Some((Some(scattered), attenuation))
+    }
+}
 
-		scattered = Ray::new(hr.p, scatter_dir);
-		attenuation = self.albedo;
-		Some(Some(scattered), attenuation)
-	}
+#[derive(Default, Clone, Copy)]
+pub struct Metal {
+    pub albedo: Color,
 }
 
 impl Metal {
-	pub fn new(albedo: Color) -> Self {
-		Metal{ albedo }
-	}
+    pub fn new(albedo: Color) -> Self {
+        Metal { albedo }
+    }
 }
 
 impl Scatter for Metal {
-	fn scatter(r_in &Ray, hr: &HitRecord) -> Option<(Option<Ray>, Color)> {
+    fn scatter(&self, r_in: &Ray, hr: &HitRecord) -> Option<(Option<Ray>, Color)> {
+        let reflected = Vec3::reflect(&r_in.direction, &hr.normal);
+        let scattered = Ray::new(hr.p, reflected);
+        let attenuation = self.albedo;
 
-		let reflected = Vec3::reflect(r_in.direction, hr.normal);
-		scattered = Ray::new(hr.p, reflected);
-		attenuation = self.albedo;
-
-		if Vec3::dot(scattered.direction, hr.normal) > 0.0 {
-			Some(Some(scattered), attenuation)
-		} else {
-			None
-		}
-	}
+        if Vec3::dot(&scattered.direction, &hr.normal) > 0.0 {
+            Some((Some(scattered), attenuation))
+        } else {
+            None
+        }
+    }
 }
