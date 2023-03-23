@@ -1,12 +1,12 @@
 use crate::ray::{HitRecord, Ray};
-use crate::vec3::{Color, Vec3};
+use crate::vec3::{Color, Point3, Vec3};
 
 // returns scattered ray (if its exists) and attenuation
 pub trait Scatter {
     fn scatter(&self, r_in: &Ray, hr: &HitRecord) -> Option<(Option<Ray>, Color)>;
 }
 
-#[derive(Default, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub enum Material {
     Lambertian(Lambertian),
     Metal(Metal),
@@ -21,7 +21,7 @@ impl Scatter for Material {
     }
 }
 
-#[derive(Default, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct Lambertian {
     pub albedo: Color,
 }
@@ -46,9 +46,9 @@ impl Scatter for Lambertian {
     }
 }
 
-#[derive(Default, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct Metal {
-    pub albedo: Color,
+    albedo: Color,
 }
 
 impl Metal {

@@ -2,7 +2,7 @@ use indicatif::ProgressBar;
 use rand::Rng;
 use raytracer::{
     camera::Camera,
-    material::{Lambertian, Material, Metal},
+    material::{Lambertian, Material, Metal, Scatter},
     ray::{Hittable, HittableList, Ray},
     sphere::Sphere,
     vec3::{Color, Point3, Vec3},
@@ -10,13 +10,13 @@ use raytracer::{
 
 fn ray_color(r: Ray, world: &HittableList<Sphere>, depth: u32) -> Color {
     if depth == 0 {
-        Color::zero()
+        return Color::zero();
     }
 
     match world.hit(&r, 0.0001, f32::INFINITY) {
         Some(hr) => {
-            match hr.material.scatter(r, hr) {
-                Some((Some(attenuation), scattered)) => {
+            match hr.material.scatter(&r, &hr) {
+                Some((Some(scattered), attenuation)) => {
                     attenuation * ray_color(scattered, world, depth - 1)
                 }
                 _ => Color::zero(),
@@ -43,10 +43,10 @@ fn main() {
 
     // World
 
-    let material_ground = Lambertian::new(Color::new(0.8, 0.8, 0.8));
-    let material_center = Lambertian::new(Color::new(0.7, 0.3, 0.3));
-    let material_left = Metal::new(Color::new(0.8, 0.8, 0.8));
-    let material_right = Metal::new(Color::new(0.8, 0.6, 0.2));
+    let material_ground = Material::Lambertian(Lambertian::new(Color::new(0.8, 0.8, 0.8)));
+    let material_center = Material::Lambertian(Lambertian::new(Color::new(0.7, 0.3, 0.3)));
+    let material_left = Material::Metal(Metal::new(Color::new(0.8, 0.8, 0.8)));
+    let material_right = Material::Metal(Metal::new(Color::new(0.8, 0.6, 0.2)));
 
     let mut world = HittableList::new();
     world.add(Sphere::new(
@@ -55,7 +55,7 @@ fn main() {
         material_ground,
     ));
     world.add(Sphere::new(
-        Point3::new(0.0, 0.0, 0.0),
+        Point3::new(0.0, 0.0, -1.0),
         0.5,
         material_center,
     ));
