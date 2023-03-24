@@ -79,7 +79,13 @@ fn main() {
     ));
 
     // Camera
-    let camera = Camera::new();
+    let camera = Camera::new(
+        Point3::new(-2., 2., 1.),
+        Point3::new(0., 0., -1.),
+        Vec3::new(0., 1., 0.),
+        20.0,
+        ASPECT_RATIO,
+    );
 
     // Render
 
