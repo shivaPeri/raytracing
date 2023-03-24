@@ -1,6 +1,5 @@
 use crate::ray::{HitRecord, Ray};
 use crate::vec3::{Color, Vec3};
-use num_traits::Pow;
 use rand::Rng;
 
 // returns scattered ray (if its exists) and attenuation
