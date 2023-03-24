@@ -2,7 +2,7 @@ use indicatif::ProgressBar;
 use rand::Rng;
 use raytracer::{
     camera::Camera,
-    material::{Lambertian, Material, Metal, Scatter},
+    material::{Dielectric, Lambertian, Material, Metal, Scatter},
     ray::{Hittable, HittableList, Ray},
     sphere::Sphere,
     vec3::{Color, Point3, Vec3},
@@ -35,18 +35,21 @@ fn ray_color(r: Ray, world: &HittableList<Sphere>, depth: u32) -> Color {
 
 fn main() {
     // Image
-    const aspect_ratio: f32 = 16.0 / 9.0;
-    const image_width: i32 = 400;
-    const image_height: i32 = ((image_width as f32) / aspect_ratio) as i32;
-    const samples_per_pixel: i32 = 100;
-    const max_depth: u32 = 50;
+    const ASPECT_RATIO: f32 = 16.0 / 9.0;
+    const IMAGE_WIDTH: i32 = 400;
+    const IMAGE_HEIGHT: i32 = ((IMAGE_WIDTH as f32) / ASPECT_RATIO) as i32;
+    const SAMPLES: i32 = 100;
+    const MAX_DEPTH: u32 = 50;
 
     // World
 
-    let material_ground = Material::Lambertian(Lambertian::new(Color::new(0.8, 0.8, 0.8)));
-    let material_center = Material::Lambertian(Lambertian::new(Color::new(0.7, 0.3, 0.3)));
-    let material_left = Material::Metal(Metal::new(Color::new(0.8, 0.8, 0.8)));
-    let material_right = Material::Metal(Metal::new(Color::new(0.8, 0.6, 0.2)));
+    let material_ground = Material::Lambertian(Lambertian::new(Color::new(0.8, 0.8, 0.0)));
+    // let material_center = Material::Lambertian(Lambertian::new(Color::new(0.7, 0.3, 0.3)));
+    // let material_left = Material::Metal(Metal::new(Color::new(0.8, 0.8, 0.8), 0.3));
+    // let material_center = Material::Dielectric(Dielectric { ir: 1.5 });
+    let material_center = Material::Lambertian(Lambertian::new(Color::new(0.1, 0.2, 0.5)));
+    let material_left = Material::Dielectric(Dielectric { ir: 1.5 });
+    let material_right = Material::Metal(Metal::new(Color::new(0.8, 0.6, 0.2), 0.0));
 
     let mut world = HittableList::new();
     world.add(Sphere::new(
@@ -65,6 +68,11 @@ fn main() {
         material_left,
     ));
     world.add(Sphere::new(
+        Point3::new(-1.0, 0.0, -1.0),
+        -0.4,
+        material_left,
+    ));
+    world.add(Sphere::new(
         Point3::new(1.0, 0.0, -1.0),
         0.5,
         material_right,
@@ -76,23 +84,23 @@ fn main() {
     // Render
 
     let mut rng = rand::thread_rng();
-    let bar = ProgressBar::new((image_width * image_height) as u64);
+    let bar = ProgressBar::new((IMAGE_WIDTH * IMAGE_HEIGHT) as u64);
 
-    println!("P3\n{} {}\n255", image_width, image_height);
+    println!("P3\n{} {}\n255", IMAGE_WIDTH, IMAGE_HEIGHT);
 
-    for j in (0..image_height).rev() {
-        for i in 0..image_width {
+    for j in (0..IMAGE_HEIGHT).rev() {
+        for i in 0..IMAGE_WIDTH {
             let mut color = Color::zero();
 
-            for _s in 0..samples_per_pixel {
-                let u: f32 = ((i as f32) + rng.gen_range(0.0..1.0)) / ((image_width - 1) as f32);
-                let v: f32 = ((j as f32) + rng.gen_range(0.0..1.0)) / ((image_height - 1) as f32);
+            for _s in 0..SAMPLES {
+                let u: f32 = ((i as f32) + rng.gen_range(0.0..1.0)) / ((IMAGE_WIDTH - 1) as f32);
+                let v: f32 = ((j as f32) + rng.gen_range(0.0..1.0)) / ((IMAGE_HEIGHT - 1) as f32);
 
                 let r = camera.get_ray(u, v);
-                color += ray_color(r, &world, max_depth);
+                color += ray_color(r, &world, MAX_DEPTH);
             }
 
-            color /= samples_per_pixel as f32;
+            color /= SAMPLES as f32;
 
             let ir: u8 = (255.999 * color.x) as u8;
             let ig: u8 = (255.999 * color.y) as u8;
